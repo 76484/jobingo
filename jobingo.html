@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Jobingo!</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style type="text/css">
+      h1 {
+        text-align: center;
+      }
+
+      button#Spin {
+        background: green;
+        border: 0;
+        border-radius: 5px;
+        color: white;
+        cursor: pointer;
+        display: block;
+        font-weight: bold;
+        margin: 0 auto 20px;
+        padding: 10px 20px;
+      }
+
+      ul {
+        list-style: none;
+        margin: 0 auto;
+        padding: 0;
+      }
+
+      li {
+        text-align: center;
+        text-decoration: line-through;
+      }
+
+      #Current {
+        font-size: 48px;
+        font-weight: bold;
+        margin: 20px 0;
+        text-align: center;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>
+      Jobingo!
+    </h1>
+
+    <button id="Spin">
+      Spin the Wheel!
+    </button>
+
+    <div id="Current"></div>
+
+    <ul id="Played"></ul>
+
+    <script>
+      function shuffle(array) {
+        var currentIndex = array.length,
+          temporaryValue,
+          randomIndex;
+
+        // While there remain elements to shuffle...
+        while (0 !== currentIndex) {
+          // Pick a remaining element...
+          randomIndex = Math.floor(Math.random() * currentIndex);
+          currentIndex -= 1;
+
+          // And swap it with the current element.
+          temporaryValue = array[currentIndex];
+          array[currentIndex] = array[randomIndex];
+          array[randomIndex] = temporaryValue;
+        }
+
+        return array;
+      }
+
+      function range(size, startAt = 0) {
+        return [...Array(size).keys()].map((i) => i + startAt);
+      }
+
+      const values = {
+        b: range(15, 1),
+        i: range(15, 16),
+        n: range(15, 31),
+        g: range(15, 46),
+        o: range(15, 61),
+      };
+
+      const allValues = Object.keys(values).reduce((acc, key) => {
+        return acc.concat(
+          values[key].map((val) => `${key.toUpperCase()} - ${val}`)
+        );
+      }, []);
+
+      shuffle(allValues);
+
+      const $current = document.getElementById("Current");
+      const $spin = document.getElementById("Spin");
+      const $played = document.getElementById("Played");
+
+      let index = 0;
+
+      const render = () => {};
+
+      $spin.addEventListener("click", () => {
+        $current.innerHTML = allValues[index];
+        if (index > 0) {
+          const $li = document.createElement("li");
+          $li.innerHTML = allValues[index - 1];
+          $played.prepend($li);
+        }
+        index++;
+      });
+    </script>
+  </body>
+</html>
