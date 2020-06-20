@@ -9,6 +9,12 @@
         text-align: center;
       }
 
+      h2#Winner {
+        color: green;
+        display: none;
+        text-align: center;
+      }
+
       button#Spin {
         background: green;
         border: 0;
@@ -67,6 +73,8 @@
     <button id="Spin">
       Spin the Wheel!
     </button>
+
+    <h2 id="Winner">Congratulations! You're a Winner!</h2>
 
     <div id="BoardContainer"></div>
 
@@ -156,6 +164,7 @@
       const $current = document.getElementById("Current");
       const $spin = document.getElementById("Spin");
       const $played = document.getElementById("Played");
+      const $winner = document.getElementById("Winner");
 
       let playIndex = 0;
       let called = {
@@ -178,6 +187,62 @@
         n: shuffle(values.n.slice()).slice(0, 5),
         g: shuffle(values.g.slice()).slice(0, 5),
         o: shuffle(values.o.slice()).slice(0, 5),
+      };
+
+      const isWinningBoard = (board, called) => {
+        let isWinner = false;
+
+        // has a winning row ?
+        isWinner =
+          isWinner ||
+          [0, 1, 2, 3, 4].some((index) => {
+            return ["b", "i", "n", "g", "o"].every((key) => {
+              const val = board[key][index];
+              return called[key][val.index];
+            });
+          });
+
+        // has a winning column?
+        isWinner =
+          isWinner ||
+          ["b", "i", "n", "g", "o"].some((key) => {
+            return [0, 1, 2, 3, 4].every((rowIndex) => {
+              const val = board[key][rowIndex];
+              return called[key][val.index];
+            });
+          });
+
+        // has winning diagonal from top/left?
+        isWinner =
+          isWinner ||
+          [
+            ["b", 0],
+            ["i", 1],
+            ["n", 2],
+            ["g", 3],
+            ["o", 4],
+          ].every((keyIndexPair) => {
+            const [key, index] = keyIndexPair;
+            const val = board[key][index];
+            return called[key][val.index];
+          });
+
+        // has winning diagonal from top/right?
+        isWinner =
+          isWinner ||
+          [
+            ["b", 4],
+            ["i", 3],
+            ["n", 2],
+            ["g", 1],
+            ["o", 0],
+          ].every((keyIndexPair) => {
+            const [key, index] = keyIndexPair;
+            const val = board[key][index];
+            return called[key][val.index];
+          });
+
+        return isWinner;
       };
 
       // determine FREE cell and mark it as called.
@@ -223,6 +288,12 @@
         }
 
         renderBoard(called);
+
+        if (isWinningBoard(board, called)) {
+          $spin.style.display = "none";
+          $winner.style.display = "block";
+        }
+
         playIndex++;
       });
 
