@@ -38,6 +38,10 @@
         margin: 20px 0;
         text-align: center;
       }
+
+      .called {
+        background: grey;
+      }
     </style>
   </head>
   <body>
@@ -72,9 +76,13 @@
               {{#each ../columns as |col|}}
                 <td>
                   {{#isFreeCell col @../index}}
-                    FREE
+                    <div class="called">FREE</div>
                   {{else}}
-                    {{lookup (lookup ../../board col) @../index}}
+                    {{#with (lookup (lookup ../../board col) @../index) as |val|}}
+                      <div class="{{#isCalled val @root/called}}called{{/isCalled}}">
+                        {{val.display}}
+                      </div>
+                    {{/with}}
                   {{/isFreeCell}}
                 </td>
               {{/each}}
@@ -106,22 +114,26 @@
         return array;
       }
 
-      function range(size, startAt = 0) {
-        return [...Array(size).keys()].map((i) => i + startAt);
-      }
-
-      const values = {
-        b: range(15, 1),
-        i: range(15, 16),
-        n: range(15, 31),
-        g: range(15, 46),
-        o: range(15, 61),
+      const makeValues = (key, startVal, length = 15) => {
+        return [...Array(length).keys()].map((index) => {
+          return {
+            display: `${index + startVal}`,
+            index,
+            key,
+          };
+        });
       };
 
-      const allValues = Object.keys(values).reduce((acc, key) => {
-        return acc.concat(
-          values[key].map((val) => `${key.toUpperCase()} - ${val}`)
-        );
+      const values = {
+        b: makeValues("b", 1),
+        i: makeValues("i", 16),
+        n: makeValues("n", 31),
+        g: makeValues("g", 46),
+        o: makeValues("o", 61),
+      };
+
+      let allValues = Object.keys(values).reduce((acc, key) => {
+        return acc.concat(values[key]);
       }, []);
 
       shuffle(allValues);
@@ -130,19 +142,14 @@
       const $spin = document.getElementById("Spin");
       const $played = document.getElementById("Played");
 
-      let index = 0;
-
-      const render = () => {};
-
-      $spin.addEventListener("click", () => {
-        $current.innerHTML = allValues[index];
-        if (index > 0) {
-          const $li = document.createElement("li");
-          $li.innerHTML = allValues[index - 1];
-          $played.prepend($li);
-        }
-        index++;
-      });
+      let playIndex = 0;
+      let called = {
+        b: Array(15).fill(false),
+        i: Array(15).fill(false),
+        n: Array(15).fill(false),
+        g: Array(15).fill(false),
+        o: Array(15).fill(false),
+      };
 
       // make board
       const $boardContainer = document.getElementById("BoardContainer");
@@ -153,10 +160,20 @@
       const board = {
         b: shuffle(values.b.slice()).slice(0, 5),
         i: shuffle(values.i.slice()).slice(0, 5),
-        n: shuffle(values.n.slice()).slice(0, 4),
+        n: shuffle(values.n.slice()).slice(0, 5),
         g: shuffle(values.g.slice()).slice(0, 5),
         o: shuffle(values.o.slice()).slice(0, 5),
       };
+
+      // determine FREE cell and mark it as called.
+      called["n"][board["n"][2].index] = true;
+
+      Handlebars.registerHelper("isCalled", function (val, called, options) {
+        if (called[val.key][val.index]) {
+          return options.fn(this);
+        }
+        return options.inverse(this);
+      });
 
       Handlebars.registerHelper("isFreeCell", function (col, row, options) {
         if (col === "n" && row === 2) {
@@ -165,11 +182,36 @@
         return options.inverse(this);
       });
 
-      $boardContainer.innerHTML = boardTemplate({
-        board,
-        columns: ["b", "i", "n", "g", "o"],
-        rows: [0, 1, 2, 3, 4],
+      const renderBoard = () => {
+        $boardContainer.innerHTML = boardTemplate({
+          board,
+          called,
+          columns: ["b", "i", "n", "g", "o"],
+          rows: [0, 1, 2, 3, 4],
+        });
+      };
+
+      // play
+      $spin.addEventListener("click", () => {
+        const value = allValues[playIndex];
+
+        called[value.key][value.index] = true;
+        $current.innerHTML = `${value.key.toUpperCase()} - ${value.display}`;
+
+        if (playIndex > 0) {
+          const $li = document.createElement("li");
+          const prevValue = allValues[playIndex - 1];
+          $li.innerHTML = `${prevValue.key.toUpperCase()} - ${
+            prevValue.display
+          }`;
+          $played.prepend($li);
+        }
+
+        renderBoard(called);
+        playIndex++;
       });
+
+      renderBoard(called);
     </script>
   </body>
 </html>
