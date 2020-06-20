@@ -49,10 +49,42 @@
       Spin the Wheel!
     </button>
 
+    <div id="BoardContainer"></div>
+
     <div id="Current"></div>
 
     <ul id="Played"></ul>
 
+    <script id="BoardTemplate" type="text/template">
+      <table>
+        <thead>
+          <tr>
+            <th>B</th>
+            <th>I</th>
+            <th>N</th>
+            <th>G</th>
+            <th>O</th>
+          </tr>
+        </thead>
+        <tbody>
+          {{#each rows}}
+            <tr>
+              {{#each ../columns as |col|}}
+                <td>
+                  {{#isFreeCell col @../index}}
+                    FREE
+                  {{else}}
+                    {{lookup (lookup ../../board col) @../index}}
+                  {{/isFreeCell}}
+                </td>
+              {{/each}}
+            </tr>
+          {{/each}}
+        </tbody>
+      </table>
+    </script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/handlebars.js/4.7.6/handlebars.js"></script>
     <script>
       function shuffle(array) {
         var currentIndex = array.length,
@@ -110,6 +142,33 @@
           $played.prepend($li);
         }
         index++;
+      });
+
+      // make board
+      const $boardContainer = document.getElementById("BoardContainer");
+      const $boardTemplateHtml = document.getElementById("BoardTemplate")
+        .innerHTML;
+      const boardTemplate = Handlebars.compile($boardTemplateHtml);
+
+      const board = {
+        b: shuffle(values.b.slice()).slice(0, 5),
+        i: shuffle(values.i.slice()).slice(0, 5),
+        n: shuffle(values.n.slice()).slice(0, 4),
+        g: shuffle(values.g.slice()).slice(0, 5),
+        o: shuffle(values.o.slice()).slice(0, 5),
+      };
+
+      Handlebars.registerHelper("isFreeCell", function (col, row, options) {
+        if (col === "n" && row === 2) {
+          return options.fn(this);
+        }
+        return options.inverse(this);
+      });
+
+      $boardContainer.innerHTML = boardTemplate({
+        board,
+        columns: ["b", "i", "n", "g", "o"],
+        rows: [0, 1, 2, 3, 4],
       });
     </script>
   </body>
