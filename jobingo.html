@@ -32,6 +32,10 @@
         text-decoration: line-through;
       }
 
+      table {
+        margin: 0 auto;
+      }
+
       #Current {
         font-size: 48px;
         font-weight: bold;
@@ -39,7 +43,18 @@
         text-align: center;
       }
 
-      .called {
+      .cell {
+        align-items: center;
+        background: #efefef;
+        font-weight: bold;
+        display: flex;
+        font-size: 18px;
+        height: 60px;
+        justify-content: center;
+        width: 60px;
+      }
+
+      .cell.called {
         background: grey;
       }
     </style>
@@ -76,10 +91,10 @@
               {{#each ../columns as |col|}}
                 <td>
                   {{#isFreeCell col @../index}}
-                    <div class="called">FREE</div>
+                    <div class="cell called">FREE</div>
                   {{else}}
                     {{#with (lookup (lookup ../../board col) @../index) as |val|}}
-                      <div class="{{#isCalled val @root/called}}called{{/isCalled}}">
+                      <div class="cell {{#isCalled val @root/called}}called{{/isCalled}}">
                         {{val.display}}
                       </div>
                     {{/with}}
