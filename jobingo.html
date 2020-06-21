@@ -136,7 +136,7 @@
     <script id="ValuesTemplate" type="text/template">
       {{#each @root.keys as |key|}}
         <div class="values__col">
-          <h3>{{key}}</h3>
+          <h3>{{uppercase key}}</h3>
           <ul>
             {{#each (lookup @root.values key) as |value|}}
               <li class="value {{#if value.isCalled}}value--called{{/if}}">{{value.face}}</li>
@@ -316,6 +316,10 @@
 
       Handlebars.registerHelper("range", function (startVal, length) {
         return range(startVal, length);
+      });
+
+      Handlebars.registerHelper("uppercase", function (input) {
+        return String(input).toUpperCase();
       });
 
       const renderBoard = () => {
