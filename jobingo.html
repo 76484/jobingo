@@ -49,6 +49,19 @@
         text-align: center;
       }
 
+      .called {
+        display: flex;
+        margin: 0 auto;
+        max-width: 100%;
+        justify-content: space-between;
+        width: 500px;
+      }
+
+      .called__col {
+        flex: 1 1 100%;
+        text-align: center;
+      }
+
       .cell {
         align-items: center;
         background: #efefef;
@@ -82,31 +95,24 @@
 
     <ul id="Played"></ul>
 
-    <section
-      style="
-        display: flex;
-        max-width: 100%;
-        justify-content: space-between;
-        width: 600px;
-      "
-    >
-      <div>
+    <section class="called">
+      <div class="called__col">
         <h3>B</h3>
         <ul id="CalledB"></ul>
       </div>
-      <div>
+      <div class="called__col">
         <h3>I</h3>
         <ul id="CalledI"></ul>
       </div>
-      <div>
+      <div class="called__col">
         <h3>N</h3>
         <ul id="CalledN"></ul>
       </div>
-      <div>
+      <div class="called__col">
         <h3>G</h3>
         <ul id="CalledG"></ul>
       </div>
-      <div>
+      <div class="called__col">
         <h3>O</h3>
         <ul id="CalledO"></ul>
       </div>
