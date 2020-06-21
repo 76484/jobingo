@@ -202,10 +202,9 @@
 
       const $current = document.getElementById("Current");
       const $spin = document.getElementById("Spin");
-      const $played = document.getElementById("Played");
       const $winner = document.getElementById("Winner");
 
-      let playIndex = 0;
+      let spinIndex = 0;
 
       // make board
       const $boardContainer = document.getElementById("BoardContainer");
@@ -333,16 +332,16 @@
 
       // play
       $spin.addEventListener("click", () => {
-        const spin = spins[playIndex];
+        const spin = spins[spinIndex];
         const value = values[spin.key][spin.index];
 
         value.isCalled = true;
 
         $current.innerHTML = `${value.key.toUpperCase()} - ${value.face}`;
 
-        if (playIndex > 0) {
+        if (spinIndex > 0) {
           const $li = document.createElement("li");
-          const prevSpin = spins[playIndex - 1];
+          const prevSpin = spins[spinIndex - 1];
           const prevValue = values[prevSpin.key][prevSpin.index];
           $li.innerHTML = `${prevValue.key.toUpperCase()} - ${prevValue.face}`;
           $calledByKey[prevValue.key].prepend($li);
@@ -355,7 +354,7 @@
           $winner.style.display = "block";
         }
 
-        playIndex++;
+        spinIndex++;
       });
 
       renderBoard();
