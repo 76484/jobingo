@@ -82,6 +82,36 @@
 
     <ul id="Played"></ul>
 
+    <section
+      style="
+        display: flex;
+        max-width: 100%;
+        justify-content: space-between;
+        width: 600px;
+      "
+    >
+      <div>
+        <h3>B</h3>
+        <ul id="CalledB"></ul>
+      </div>
+      <div>
+        <h3>I</h3>
+        <ul id="CalledI"></ul>
+      </div>
+      <div>
+        <h3>N</h3>
+        <ul id="CalledN"></ul>
+      </div>
+      <div>
+        <h3>G</h3>
+        <ul id="CalledG"></ul>
+      </div>
+      <div>
+        <h3>O</h3>
+        <ul id="CalledO"></ul>
+      </div>
+    </section>
+
     <script id="BoardTemplate" type="text/template">
       <table>
         <thead>
@@ -176,6 +206,13 @@
       const $boardTemplateHtml = document.getElementById("BoardTemplate")
         .innerHTML;
       const boardTemplate = Handlebars.compile($boardTemplateHtml);
+      const $calledByKey = {
+        b: document.getElementById("CalledB"),
+        i: document.getElementById("CalledI"),
+        n: document.getElementById("CalledN"),
+        g: document.getElementById("CalledG"),
+        o: document.getElementById("CalledO"),
+      };
 
       const board = {
         b: shuffle(range(0, 15)).slice(0, 5),
@@ -269,18 +306,6 @@
         return values[key][valueIndex];
       });
 
-      // Handlebars.registerHelper("isCalled", function (
-      //   key,
-      //   index,
-      //   values,
-      //   options
-      // ) {
-      //   if (values[key][index]) {
-      //     return options.fn(this);
-      //   }
-      //   return options.inverse(this);
-      // });
-
       Handlebars.registerHelper("isFreeCell", function (key, index, options) {
         if (isFreeCell(key, index)) {
           return options.fn(this);
@@ -314,7 +339,7 @@
           const prevSpin = spins[playIndex - 1];
           const prevValue = values[prevSpin.key][prevSpin.index];
           $li.innerHTML = `${prevValue.key.toUpperCase()} - ${prevValue.face}`;
-          $played.prepend($li);
+          $calledByKey[prevValue.key].prepend($li);
         }
 
         renderBoard();
