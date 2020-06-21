@@ -33,8 +33,13 @@
         padding: 0;
       }
 
-      li {
+      li.value {
+        font-size: 20px;
         text-align: center;
+      }
+
+      li.value.value--called {
+        color: #ccc;
         text-decoration: line-through;
       }
 
@@ -49,7 +54,7 @@
         text-align: center;
       }
 
-      .called {
+      .values {
         display: flex;
         margin: 0 auto;
         max-width: 100%;
@@ -57,7 +62,7 @@
         width: 500px;
       }
 
-      .called__col {
+      .values__col {
         flex: 1 1 100%;
         text-align: center;
       }
@@ -95,28 +100,7 @@
 
     <ul id="Played"></ul>
 
-    <section class="called">
-      <div class="called__col">
-        <h3>B</h3>
-        <ul id="CalledB"></ul>
-      </div>
-      <div class="called__col">
-        <h3>I</h3>
-        <ul id="CalledI"></ul>
-      </div>
-      <div class="called__col">
-        <h3>N</h3>
-        <ul id="CalledN"></ul>
-      </div>
-      <div class="called__col">
-        <h3>G</h3>
-        <ul id="CalledG"></ul>
-      </div>
-      <div class="called__col">
-        <h3>O</h3>
-        <ul id="CalledO"></ul>
-      </div>
-    </section>
+    <section class="values" id="Values"></section>
 
     <script id="BoardTemplate" type="text/template">
       <table>
@@ -147,6 +131,19 @@
           {{/each}}
         </tbody>
       </table>
+    </script>
+
+    <script id="ValuesTemplate" type="text/template">
+      {{#each @root.keys as |key|}}
+        <div class="values__col">
+          <h3>{{key}}</h3>
+          <ul>
+            {{#each (lookup @root.values key) as |value|}}
+              <li class="value {{#if value.isCalled}}value--called{{/if}}">{{value.face}}</li>
+            {{/each}}
+          </ul>
+        </div>
+      {{/each}}
     </script>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/handlebars.js/4.7.6/handlebars.js"></script>
@@ -211,13 +208,12 @@
       const $boardTemplateHtml = document.getElementById("BoardTemplate")
         .innerHTML;
       const boardTemplate = Handlebars.compile($boardTemplateHtml);
-      const $calledByKey = {
-        b: document.getElementById("CalledB"),
-        i: document.getElementById("CalledI"),
-        n: document.getElementById("CalledN"),
-        g: document.getElementById("CalledG"),
-        o: document.getElementById("CalledO"),
-      };
+
+      // make values
+      const $values = document.getElementById("Values");
+      const valuesTemplateHtml = document.getElementById("ValuesTemplate")
+        .innerHTML;
+      const valuesTemplate = Handlebars.compile(valuesTemplateHtml);
 
       const board = {
         b: shuffle(range(0, 15)).slice(0, 5),
@@ -330,6 +326,13 @@
         });
       };
 
+      const renderValues = () => {
+        $values.innerHTML = valuesTemplate({
+          keys: ["b", "i", "n", "g", "o"],
+          values,
+        });
+      };
+
       // play
       $spin.addEventListener("click", () => {
         const spin = spins[spinIndex];
@@ -339,15 +342,8 @@
 
         $current.innerHTML = `${value.key.toUpperCase()} - ${value.face}`;
 
-        if (spinIndex > 0) {
-          const $li = document.createElement("li");
-          const prevSpin = spins[spinIndex - 1];
-          const prevValue = values[prevSpin.key][prevSpin.index];
-          $li.innerHTML = `${prevValue.key.toUpperCase()} - ${prevValue.face}`;
-          $calledByKey[prevValue.key].prepend($li);
-        }
-
         renderBoard();
+        renderValues();
 
         if (isWinningBoard(board, values)) {
           $spin.style.display = "none";
@@ -358,6 +354,7 @@
       });
 
       renderBoard();
+      renderValues();
     </script>
   </body>
 </html>
