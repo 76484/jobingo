@@ -94,17 +94,15 @@
           </tr>
         </thead>
         <tbody>
-          {{#each rows}}
+          {{#each (range 0 5)}}
             <tr>
-              {{#each ../columns as |col|}}
+              {{#each @root.keys as |key|}}
                 <td>
-                  {{#isFreeCell col @../index}}
+                  {{#isFreeCell key @../index}}
                     <div class="cell called">FREE</div>
                   {{else}}
-                    {{#with (lookup (lookup ../../board col) @../index) as |val|}}
-                      <div class="cell {{#isCalled val @root/called}}called{{/isCalled}}">
-                        {{val.display}}
-                      </div>
+                    {{#with (getValue key @../index @root.board @root.values) as |value|}}
+                      <div class="cell {{#if value.isCalled}}called{{/if}}">{{lookup value 'face'}}</div>
                     {{/with}}
                   {{/isFreeCell}}
                 </td>
@@ -137,12 +135,17 @@
         return array;
       }
 
-      const makeValues = (key, startVal, length = 15) => {
-        return [...Array(length).keys()].map((index) => {
+      const range = (startVal, length) => {
+        return [...Array(length).keys()].map((i) => i + startVal);
+      };
+
+      const makeValues = (key, startFace, length = 15) => {
+        return range(startFace, length).map((face, index) => {
           return {
-            display: `${index + startVal}`,
+            isCalled: false,
             index,
             key,
+            face,
           };
         });
       };
@@ -155,11 +158,11 @@
         o: makeValues("o", 61),
       };
 
-      let allValues = Object.keys(values).reduce((acc, key) => {
+      let spins = Object.keys(values).reduce((acc, key) => {
         return acc.concat(values[key]);
       }, []);
 
-      shuffle(allValues);
+      shuffle(spins);
 
       const $current = document.getElementById("Current");
       const $spin = document.getElementById("Spin");
@@ -167,13 +170,6 @@
       const $winner = document.getElementById("Winner");
 
       let playIndex = 0;
-      let called = {
-        b: Array(15).fill(false),
-        i: Array(15).fill(false),
-        n: Array(15).fill(false),
-        g: Array(15).fill(false),
-        o: Array(15).fill(false),
-      };
 
       // make board
       const $boardContainer = document.getElementById("BoardContainer");
@@ -182,14 +178,18 @@
       const boardTemplate = Handlebars.compile($boardTemplateHtml);
 
       const board = {
-        b: shuffle(values.b.slice()).slice(0, 5),
-        i: shuffle(values.i.slice()).slice(0, 5),
-        n: shuffle(values.n.slice()).slice(0, 5),
-        g: shuffle(values.g.slice()).slice(0, 5),
-        o: shuffle(values.o.slice()).slice(0, 5),
+        b: shuffle(range(0, 15)).slice(0, 5),
+        i: shuffle(range(0, 15)).slice(0, 5),
+        n: shuffle(range(0, 15)).slice(0, 5),
+        g: shuffle(range(0, 15)).slice(0, 5),
+        o: shuffle(range(0, 15)).slice(0, 5),
       };
 
-      const isWinningBoard = (board, called) => {
+      const isFreeCell = (key, index) => {
+        return key === "n" && index === 2;
+      };
+
+      const isWinningBoard = (board, values) => {
         let isWinner = false;
 
         // has a winning row ?
@@ -197,8 +197,11 @@
           isWinner ||
           [0, 1, 2, 3, 4].some((index) => {
             return ["b", "i", "n", "g", "o"].every((key) => {
-              const val = board[key][index];
-              return called[key][val.index];
+              if (isFreeCell(key, index)) {
+                return true;
+              }
+              const valueIndex = board[key][index];
+              return values[key][valueIndex].isCalled;
             });
           });
 
@@ -206,9 +209,12 @@
         isWinner =
           isWinner ||
           ["b", "i", "n", "g", "o"].some((key) => {
-            return [0, 1, 2, 3, 4].every((rowIndex) => {
-              const val = board[key][rowIndex];
-              return called[key][val.index];
+            return [0, 1, 2, 3, 4].every((index) => {
+              if (isFreeCell(key, index)) {
+                return true;
+              }
+              const valueIndex = board[key][index];
+              return values[key][valueIndex].isCalled;
             });
           });
 
@@ -223,8 +229,12 @@
             ["o", 4],
           ].every((keyIndexPair) => {
             const [key, index] = keyIndexPair;
-            const val = board[key][index];
-            return called[key][val.index];
+            if (isFreeCell(key, index)) {
+              return true;
+            }
+
+            const valueIndex = board[key][index];
+            return values[key][valueIndex].isCalled;
           });
 
         // has winning diagonal from top/right?
@@ -238,58 +248,78 @@
             ["o", 0],
           ].every((keyIndexPair) => {
             const [key, index] = keyIndexPair;
-            const val = board[key][index];
-            return called[key][val.index];
+            if (isFreeCell(key, index)) {
+              return true;
+            }
+
+            const valueIndex = board[key][index];
+            return values[key][valueIndex].isCalled;
           });
 
         return isWinner;
       };
 
-      // determine FREE cell and mark it as called.
-      called["n"][board["n"][2].index] = true;
+      Handlebars.registerHelper("getValue", function (
+        key,
+        index,
+        board,
+        values
+      ) {
+        const valueIndex = board[key][index];
+        return values[key][valueIndex];
+      });
 
-      Handlebars.registerHelper("isCalled", function (val, called, options) {
-        if (called[val.key][val.index]) {
+      // Handlebars.registerHelper("isCalled", function (
+      //   key,
+      //   index,
+      //   values,
+      //   options
+      // ) {
+      //   if (values[key][index]) {
+      //     return options.fn(this);
+      //   }
+      //   return options.inverse(this);
+      // });
+
+      Handlebars.registerHelper("isFreeCell", function (key, index, options) {
+        if (isFreeCell(key, index)) {
           return options.fn(this);
         }
         return options.inverse(this);
       });
 
-      Handlebars.registerHelper("isFreeCell", function (col, row, options) {
-        if (col === "n" && row === 2) {
-          return options.fn(this);
-        }
-        return options.inverse(this);
+      Handlebars.registerHelper("range", function (startVal, length) {
+        return range(startVal, length);
       });
 
       const renderBoard = () => {
         $boardContainer.innerHTML = boardTemplate({
           board,
-          called,
-          columns: ["b", "i", "n", "g", "o"],
-          rows: [0, 1, 2, 3, 4],
+          keys: ["b", "i", "n", "g", "o"],
+          values,
         });
       };
 
       // play
       $spin.addEventListener("click", () => {
-        const value = allValues[playIndex];
+        const spin = spins[playIndex];
+        const value = values[spin.key][spin.index];
 
-        called[value.key][value.index] = true;
-        $current.innerHTML = `${value.key.toUpperCase()} - ${value.display}`;
+        value.isCalled = true;
+
+        $current.innerHTML = `${value.key.toUpperCase()} - ${value.face}`;
 
         if (playIndex > 0) {
           const $li = document.createElement("li");
-          const prevValue = allValues[playIndex - 1];
-          $li.innerHTML = `${prevValue.key.toUpperCase()} - ${
-            prevValue.display
-          }`;
+          const prevSpin = spins[playIndex - 1];
+          const prevValue = values[prevSpin.key][prevSpin.index];
+          $li.innerHTML = `${prevValue.key.toUpperCase()} - ${prevValue.face}`;
           $played.prepend($li);
         }
 
-        renderBoard(called);
+        renderBoard();
 
-        if (isWinningBoard(board, called)) {
+        if (isWinningBoard(board, values)) {
           $spin.style.display = "none";
           $winner.style.display = "block";
         }
@@ -297,7 +327,7 @@
         playIndex++;
       });
 
-      renderBoard(called);
+      renderBoard();
     </script>
   </body>
 </html>
