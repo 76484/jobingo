@@ -93,6 +93,11 @@
       Jobingo!
     </h1>
 
+    <div style="position: absolute; right: 4px; top: 4px;">
+      Spins:
+      <span id="SpinCount">0</span>
+    </div>
+
     <button id="Spin">
       Spin the Wheel!
     </button>
@@ -205,6 +210,7 @@
 
       const $current = document.getElementById("Current");
       const $spin = document.getElementById("Spin");
+      const $spinCount = document.getElementById("SpinCount");
       const $winner = document.getElementById("Winner");
 
       let spinIndex = 0;
@@ -351,6 +357,7 @@
         value.isCalled = true;
 
         $current.innerHTML = `${value.key.toUpperCase()} - ${value.face}`;
+        $spinCount.innerHTML = String(spinIndex + 1);
 
         renderBoard();
         renderValues();
