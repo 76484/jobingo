@@ -16,7 +16,6 @@
 
       h2#Winner {
         color: green;
-        display: none;
         text-align: center;
       }
 
@@ -50,6 +49,11 @@
 
       table {
         margin: 0 auto;
+      }
+
+      #BoardsContainer {
+        display: flex;
+        justify-content: space-evenly;
       }
 
       #Current {
@@ -102,9 +106,7 @@
       Spin the Wheel!
     </button>
 
-    <h2 id="Winner">Congratulations! You're a Winner!</h2>
-
-    <div id="BoardContainer"></div>
+    <div id="BoardsContainer"></div>
 
     <div id="Current"></div>
 
@@ -114,34 +116,39 @@
     <section class="values" id="Values"></section>
 
     <script id="BoardTemplate" type="text/template">
-      <table>
-        <thead>
-          <tr>
-            <th>B</th>
-            <th>I</th>
-            <th>N</th>
-            <th>G</th>
-            <th>O</th>
-          </tr>
-        </thead>
-        <tbody>
-          {{#each (range 0 5)}}
+      <article>
+        {{#if isWinner }}
+          <h2 id="Winner">Congratulations! You're a Winner!</h2>
+        {{/if}}
+        <table>
+          <thead>
             <tr>
-              {{#each @root.keys as |key|}}
-                <td>
-                  {{#isFreeCell key @../index}}
-                    <div class="cell called">FREE</div>
-                  {{else}}
-                    {{#with (getValue key @../index @root.board @root.values) as |value|}}
-                      <div class="cell {{#if value.isCalled}}called{{/if}}">{{lookup value 'face'}}</div>
-                    {{/with}}
-                  {{/isFreeCell}}
-                </td>
-              {{/each}}
+              <th>B</th>
+              <th>I</th>
+              <th>N</th>
+              <th>G</th>
+              <th>O</th>
             </tr>
-          {{/each}}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {{#each (range 0 5)}}
+              <tr>
+                {{#each @root.keys as |key|}}
+                  <td>
+                    {{#isFreeCell key @../index}}
+                      <div class="cell called">FREE</div>
+                    {{else}}
+                      {{#with (getValue key @../index @root.board @root.values) as |value|}}
+                        <div class="cell {{#if value.isCalled}}called{{/if}}">{{lookup value 'face'}}</div>
+                      {{/with}}
+                    {{/isFreeCell}}
+                  </td>
+                {{/each}}
+              </tr>
+            {{/each}}
+          </tbody>
+        </table>
+      </article>
     </script>
 
     <script id="ValuesTemplate" type="text/template">
@@ -216,7 +223,7 @@
       let spinIndex = 0;
 
       // make board
-      const $boardContainer = document.getElementById("BoardContainer");
+      const $boardsContainer = document.getElementById("BoardsContainer");
       const $boardTemplateHtml = document.getElementById("BoardTemplate")
         .innerHTML;
       const boardTemplate = Handlebars.compile($boardTemplateHtml);
@@ -227,13 +234,17 @@
         .innerHTML;
       const valuesTemplate = Handlebars.compile(valuesTemplateHtml);
 
-      const board = {
-        b: shuffle(range(0, 15)).slice(0, 5),
-        i: shuffle(range(0, 15)).slice(0, 5),
-        n: shuffle(range(0, 15)).slice(0, 5),
-        g: shuffle(range(0, 15)).slice(0, 5),
-        o: shuffle(range(0, 15)).slice(0, 5),
+      const makeBoard = () => {
+        return {
+          b: shuffle(range(0, 15)).slice(0, 5),
+          i: shuffle(range(0, 15)).slice(0, 5),
+          n: shuffle(range(0, 15)).slice(0, 5),
+          g: shuffle(range(0, 15)).slice(0, 5),
+          o: shuffle(range(0, 15)).slice(0, 5),
+        };
       };
+
+      const boards = [makeBoard(), makeBoard(), makeBoard()];
 
       const isFreeCell = (key, index) => {
         return key === "n" && index === 2;
@@ -334,12 +345,18 @@
         return String(input).toUpperCase();
       });
 
-      const renderBoard = () => {
-        $boardContainer.innerHTML = boardTemplate({
-          board,
-          keys: ["b", "i", "n", "g", "o"],
-          values,
-        });
+      const renderBoards = () => {
+        $boardsContainer.innerHTML = boards.reduce((htmlAcc, board) => {
+          return (
+            htmlAcc +
+            boardTemplate({
+              board,
+              keys: ["b", "i", "n", "g", "o"],
+              isWinner: isWinningBoard(board, values),
+              values,
+            })
+          );
+        }, "");
       };
 
       const renderValues = () => {
@@ -359,17 +376,13 @@
         $current.innerHTML = `${value.key.toUpperCase()} - ${value.face}`;
         $spinCount.innerHTML = String(spinIndex + 1);
 
-        renderBoard();
+        renderBoards();
         renderValues();
-
-        if (isWinningBoard(board, values)) {
-          $winner.style.display = "block";
-        }
 
         spinIndex++;
       });
 
-      renderBoard();
+      renderBoards();
       renderValues();
     </script>
   </body>
