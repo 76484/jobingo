@@ -90,6 +90,10 @@
       .cell.called {
         background: grey;
       }
+
+      .cell.winner {
+        background: green;
+      }
     </style>
   </head>
   <body>
@@ -136,10 +140,10 @@
                 {{#each @root.keys as |key|}}
                   <td>
                     {{#isFreeCell key @../index}}
-                      <div class="cell called">FREE</div>
+                      <div class="cell called {{#isWinningCell key @../index @root.winningCells}}winner{{/isWinningCell}}">FREE</div>
                     {{else}}
                       {{#with (getValue key @../index @root.board @root.values) as |value|}}
-                        <div class="cell {{#if value.isCalled}}called{{/if}}">{{lookup value 'face'}}</div>
+                        <div class="cell {{#if value.isCalled}}called{{/if}} {{#isWinningCell key @../index @root.winningCells}}winner{{/isWinningCell}}">{{lookup value 'face'}}</div>
                       {{/with}}
                     {{/isFreeCell}}
                   </td>
@@ -250,74 +254,108 @@
         return key === "n" && index === 2;
       };
 
-      const isWinningBoard = (board, values) => {
+      const makeWinningCells = (board, values) => {
         let isWinner = false;
+        let winningCells = {
+          b: range(0, 5).fill(false),
+          i: range(0, 5).fill(false),
+          n: range(0, 5).fill(false),
+          g: range(0, 5).fill(false),
+          o: range(0, 5).fill(false),
+        };
 
-        // has a winning row ?
-        isWinner =
-          isWinner ||
-          [0, 1, 2, 3, 4].some((index) => {
-            return ["b", "i", "n", "g", "o"].every((key) => {
+        winningCells = [0, 1, 2, 3, 4].reduce(
+          (acc, index) => {
+            const isWinningRow = ["b", "i", "n", "g", "o"].every((key) => {
               if (isFreeCell(key, index)) {
                 return true;
               }
               const valueIndex = board[key][index];
               return values[key][valueIndex].isCalled;
             });
-          });
+
+            if (isWinningRow) {
+              Object.keys(acc).forEach((key) => {
+                acc[key][index] = true;
+              });
+            }
+
+            return acc;
+          },
+          { ...winningCells }
+        );
 
         // has a winning column?
-        isWinner =
-          isWinner ||
-          ["b", "i", "n", "g", "o"].some((key) => {
-            return [0, 1, 2, 3, 4].every((index) => {
+        winningCells = ["b", "i", "n", "g", "o"].reduce(
+          (acc, key) => {
+            const isWinningKey = [0, 1, 2, 3, 4].every((index) => {
               if (isFreeCell(key, index)) {
                 return true;
               }
               const valueIndex = board[key][index];
               return values[key][valueIndex].isCalled;
             });
-          });
+
+            if (isWinningKey) {
+              acc[key].fill(true);
+            }
+
+            return acc;
+          },
+          { ...winningCells }
+        );
 
         // has winning diagonal from top/left?
-        isWinner =
-          isWinner ||
-          [
-            ["b", 0],
-            ["i", 1],
-            ["n", 2],
-            ["g", 3],
-            ["o", 4],
-          ].every((keyIndexPair) => {
-            const [key, index] = keyIndexPair;
-            if (isFreeCell(key, index)) {
-              return true;
-            }
+        const isWinningDiagLeft = [
+          ["b", 0],
+          ["i", 1],
+          ["n", 2],
+          ["g", 3],
+          ["o", 4],
+        ].every((keyIndexPair) => {
+          const [key, index] = keyIndexPair;
+          if (isFreeCell(key, index)) {
+            return true;
+          }
 
-            const valueIndex = board[key][index];
-            return values[key][valueIndex].isCalled;
-          });
+          const valueIndex = board[key][index];
+          return values[key][valueIndex].isCalled;
+        });
+
+        if (isWinningDiagLeft) {
+          winningCells["b"][0] = true;
+          winningCells["i"][1] = true;
+          winningCells["n"][2] = true;
+          winningCells["g"][3] = true;
+          winningCells["o"][4] = true;
+        }
 
         // has winning diagonal from top/right?
-        isWinner =
-          isWinner ||
-          [
-            ["b", 4],
-            ["i", 3],
-            ["n", 2],
-            ["g", 1],
-            ["o", 0],
-          ].every((keyIndexPair) => {
-            const [key, index] = keyIndexPair;
-            if (isFreeCell(key, index)) {
-              return true;
-            }
+        const isWinningDiagRight = [
+          ["b", 4],
+          ["i", 3],
+          ["n", 2],
+          ["g", 1],
+          ["o", 0],
+        ].every((keyIndexPair) => {
+          const [key, index] = keyIndexPair;
+          if (isFreeCell(key, index)) {
+            return true;
+          }
 
-            const valueIndex = board[key][index];
-            return values[key][valueIndex].isCalled;
-          });
+          const valueIndex = board[key][index];
+          return values[key][valueIndex].isCalled;
+        });
 
-        return isWinner;
+        if (isWinningDiagRight) {
+          winningCells["b"][4] = true;
+          winningCells["i"][3] = true;
+          winningCells["n"][2] = true;
+          winningCells["g"][1] = true;
+          winningCells["o"][0] = true;
+        }
+
+        return winningCells;
       };
 
       Handlebars.registerHelper("getValue", function (
@@ -337,6 +375,18 @@
         return options.inverse(this);
       });
 
+      Handlebars.registerHelper("isWinningCell", function (
+        key,
+        index,
+        winningCells,
+        options
+      ) {
+        if (winningCells[key][index]) {
+          return options.fn(this);
+        }
+        return options.inverse(this);
+      });
+
       Handlebars.registerHelper("range", function (startVal, length) {
         return range(startVal, length);
       });
@@ -345,15 +395,22 @@
         return String(input).toUpperCase();
       });
 
+      const keys = ["b", "i", "n", "g", "o"];
+
       const renderBoards = () => {
         $boardsContainer.innerHTML = boards.reduce((htmlAcc, board) => {
+          const winningCells = makeWinningCells(board, values);
+          console.log(winningCells);
           return (
             htmlAcc +
             boardTemplate({
               board,
-              keys: ["b", "i", "n", "g", "o"],
-              isWinner: isWinningBoard(board, values),
+              keys,
+              isWinner: keys.some((key) =>
+                winningCells[key].some((index) => winningCells[key][index])
+              ),
               values,
+              winningCells,
             })
           );
         }, "");
