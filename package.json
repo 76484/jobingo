@@ -1,0 +1,19 @@
+{
+  "name": "jobingo",
+  "version": "1.0.0",
+  "description": "Jobingo!",
+  "main": "index.html",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/76484/jobingo.git"
+  },
+  "author": "76484",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/76484/jobingo/issues"
+  },
+  "homepage": "https://github.com/76484/jobingo#readme"
+}
