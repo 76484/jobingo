@@ -400,7 +400,6 @@
       const renderBoards = () => {
         $boardsContainer.innerHTML = boards.reduce((htmlAcc, board) => {
           const winningCells = makeWinningCells(board, values);
-          console.log(winningCells);
           return (
             htmlAcc +
             boardTemplate({
