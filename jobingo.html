@@ -400,14 +400,16 @@
       const renderBoards = () => {
         $boardsContainer.innerHTML = boards.reduce((htmlAcc, board) => {
           const winningCells = makeWinningCells(board, values);
+          const isWinner = keys.some((key) =>
+            winningCells[key].some((isWinningCell) => isWinningCell)
+          );
+
           return (
             htmlAcc +
             boardTemplate({
               board,
               keys,
-              isWinner: keys.some((key) =>
-                winningCells[key].some((index) => winningCells[key][index])
-              ),
+              isWinner,
               values,
               winningCells,
             })
