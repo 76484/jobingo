@@ -4,6 +4,7 @@
   "description": "Jobingo!",
   "main": "index.html",
   "scripts": {
+    "publish": "node publish.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -15,5 +16,9 @@
   "bugs": {
     "url": "https://github.com/76484/jobingo/issues"
   },
-  "homepage": "https://github.com/76484/jobingo#readme"
+  "homepage": "https://github.com/76484/jobingo#readme",
+  "devDependencies": {
+    "aws-sdk": "2.703.0",
+    "yargs": "15.3.1"
+  }
 }
