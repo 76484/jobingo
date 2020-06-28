@@ -170,88 +170,32 @@
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/handlebars.js/4.7.6/handlebars.js"></script>
     <script>
-      function shuffle(array) {
-        var currentIndex = array.length,
-          temporaryValue,
-          randomIndex;
-
-        // While there remain elements to shuffle...
-        while (0 !== currentIndex) {
-          // Pick a remaining element...
-          randomIndex = Math.floor(Math.random() * currentIndex);
-          currentIndex -= 1;
-
-          // And swap it with the current element.
-          temporaryValue = array[currentIndex];
-          array[currentIndex] = array[randomIndex];
-          array[randomIndex] = temporaryValue;
-        }
-
-        return array;
-      }
-
-      const range = (startVal, length) => {
-        return [...Array(length).keys()].map((i) => i + startVal);
-      };
-
-      const makeValues = (key, startFace, length = 15) => {
-        return range(startFace, length).map((face, index) => {
-          return {
-            isCalled: false,
-            index,
-            key,
-            face,
-          };
-        });
-      };
-
-      const values = {
-        b: makeValues("b", 1),
-        i: makeValues("i", 16),
-        n: makeValues("n", 31),
-        g: makeValues("g", 46),
-        o: makeValues("o", 61),
-      };
-
-      let spins = Object.keys(values).reduce((acc, key) => {
-        return acc.concat(values[key]);
-      }, []);
-
-      shuffle(spins);
-
       const $current = document.getElementById("Current");
       const $spin = document.getElementById("Spin");
       const $spinCount = document.getElementById("SpinCount");
       const $winner = document.getElementById("Winner");
 
-      let spinIndex = 0;
-
-      // make board
+      // board
       const $boardsContainer = document.getElementById("BoardsContainer");
       const $boardTemplateHtml = document.getElementById("BoardTemplate")
         .innerHTML;
       const boardTemplate = Handlebars.compile($boardTemplateHtml);
 
-      // make values
+      // values
       const $values = document.getElementById("Values");
       const valuesTemplateHtml = document.getElementById("ValuesTemplate")
         .innerHTML;
       const valuesTemplate = Handlebars.compile(valuesTemplateHtml);
 
-      const makeBoard = () => {
-        return {
-          b: shuffle(range(0, 15)).slice(0, 5),
-          i: shuffle(range(0, 15)).slice(0, 5),
-          n: shuffle(range(0, 15)).slice(0, 5),
-          g: shuffle(range(0, 15)).slice(0, 5),
-          o: shuffle(range(0, 15)).slice(0, 5),
-        };
-      };
-
-      const boards = [makeBoard(), makeBoard(), makeBoard()];
+      let boards = [];
+      let values = null;
 
       const isFreeCell = (key, index) => {
         return key === "n" && index === 2;
+      };
+
+      const range = (startVal, length) => {
+        return [...Array(length).keys()].map((i) => i + startVal);
       };
 
       const makeWinningCells = (board, values) => {
@@ -424,24 +368,50 @@
         });
       };
 
+      const socket = new WebSocket("ws://localhost:8080");
+
+      socket.onopen = () => {
+        console.log("socket opened");
+      };
+
+      socket.onmessage = (event) => {
+        try {
+          const parsed = JSON.parse(event.data);
+          switch (parsed.type) {
+            case "board":
+              boards.push(parsed.message.board);
+              values = parsed.message.values;
+              renderBoards();
+              renderValues();
+              break;
+            case "value":
+              const value = parsed.message.value;
+
+              values = parsed.message.values;
+
+              $current.innerHTML = `${value.key.toUpperCase()} - ${value.face}`;
+
+              renderBoards();
+              renderValues();
+              break;
+            default:
+              `Unknown type: ${parsed.type}`;
+          }
+        } catch (err) {
+          console.error(`Could not parse ${event.data}`, err);
+        }
+      };
+
       // play
       $spin.addEventListener("click", () => {
-        const spin = spins[spinIndex];
-        const value = values[spin.key][spin.index];
+        const message = {
+          type: "message",
+          text: "spin",
+          time: Date.now(),
+        };
 
-        value.isCalled = true;
-
-        $current.innerHTML = `${value.key.toUpperCase()} - ${value.face}`;
-        $spinCount.innerHTML = String(spinIndex + 1);
-
-        renderBoards();
-        renderValues();
-
-        spinIndex++;
+        socket.send(JSON.stringify(message));
       });
-
-      renderBoards();
-      renderValues();
     </script>
   </body>
 </html>
